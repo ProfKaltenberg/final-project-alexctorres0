@@ -1,0 +1,89 @@
+Assignment 4 
+
+## Resource Citations:
+## 1. Stargazer Package: https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf
+## 2. R lm() Function: https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm
+
+```{r}
+##loads the stargazer tool so we can make our table
+
+library(stargazer)
+
+# setting working directory (Note: Update this path to your project folder)
+
+# setwd("your/path/here")
+
+## import the master dataset
+df <- read.csv("US_metro_purchasing_power.csv")
+
+# remove scientific notation
+options(scipen = 100)
+
+
+
+df$log_Income <- log(df$Median_Household_Income)
+df$log_Population <- log(df$Population)
+
+
+
+##clean data to create High Cost. it checks the RPP column and writes 1 if it's greater than 100 and 0 if not.
+
+df$High_Cost <- ifelse(df$Cost_Of_Living_RPP > 100, 1, 0)
+
+```
+
+Run a regression with OLS. Ensure that you have more than 3 variables. (25 pts)
+
+```{r}
+
+## Regression 1: Predicts Log Income. 
+## usign RPP, log pop, education rate
+reg1 <- lm(log_Income ~ Cost_Of_Living_RPP + log_Population + Education_Rate, data = df)
+summary(reg1)
+
+
+```
+
+
+Run a regression with a filtered dataset (filter based on a category of your choosing within your dataset). (25 pts)
+```{r}
+
+## Regression 2: Subsetting for expensive metropolitan areas
+df_high_cost <- subset(df, High_Cost == 1)
+reg2 <- lm(log_Income ~ Cost_Of_Living_RPP + log_Population + Education_Rate, data = df_high_cost)
+summary(reg2)
+
+
+```
+
+Run your preferred regression using your dataset (different from regression 3). (25 pts)
+```{r}
+
+## Regression 3: Real Purchasing Power (Preferred Model)
+## this shows what actually makes people wealthier
+reg3 <- lm(Real_Purchasing_Power ~ Education_Rate + log_Population, data = df)
+summary(reg3)
+
+## create a stargazer table to compare all three models
+## 'dep.var.caption' is set to "" to remove the "Dependent Variable" title she disliked
+stargazer(reg1, reg2, reg3, 
+          type = "text", 
+          title = "Regional Wealth Analysis: The Impact of Prices, Population, and Education/Skills",
+          dep.var.caption = "", 
+          column.labels = c("Full Nominal (Log)", "High Cost Only (Log)", "Real Wealth (Preferred)"),
+          dep.var.labels = c("Log of Household Income", "Real Purchasing Power ($)"),
+          covariate.labels = c("Cost of Living (RPP)", "Log of Population", "Education Rate", "Constant"))
+
+write.csv(df, "US_metro_purchasing_power.csv", row.names = FALSE)
+
+
+```
+Write a few sentences about your preferred regression. Interpret the coefficients that are most important to you and discuss the statistical significance. (25 pts)
+
+
+Regression 3 is my preferred model because it uses Real Purchasing Power to account for regional price parities and better reflects the actual economic stability of a household. The most conclusive result is that the Education Rate is the main driver of real wealth. A coefficient of 98,763 means that a .01 increase in the college education rate is associated with a $987 increase in real purchasing power (p < 0.01).
+
+On the other hand, the coefficient on the Log of Population is not statistically meaningful in the preferred model. This suggests that metropolitan size itself is not positively associated with individual wealth after controlling for the cost of living. Comparing regressions 1 and 2, the Cost of Living (RPP) has a much larger effect in expensive metros (1.87%), confirming that salaries in high-cost areas must scale just to maintain a basic standard of living. 
+
+One problem with this study, is that metro-wide averages might not show how unequally wealthy different urban neighborhoods really are. This means that concentrations of extreme wealth, can distort a high statistical average, hiding the fact that many residents of disadvantaged neighborhoods are actually suffering serious economic hardship. In summary, these results suggest education is a key to wealth, but the residents of high-RPP cities are caught in a real wage trap with higher nominal earnings largely consumed by local prices.
+
