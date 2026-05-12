@@ -1,0 +1,47 @@
+Assignment 4 
+
+## Resource Citations:
+## 1. Stargazer Package: https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf
+## 2. R lm() Function: https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm
+
+```{r}
+
+##loads the stargazer tool so we can make our table
+library(stargazer)
+
+## import the master dataset
+df <- read.csv("US_metro_purchasing_power.csv")
+
+##clean data to create High Cost. it checks the RPP column and writes 1 if it's greater than 100 and 0 if not.
+df$High_Cost <- ifelse(df$Cost_Of_Living_RPP > 100, 1, 0)
+
+## predicts nominal income using RPP, Population, Education, and the High Cost variable
+reg1 <- lm(Median_Household_Income ~ Cost_Of_Living_RPP + Population + Education_Rate + High_Cost, data = df)
+
+## subsetting to make a smaller group of only the high cost cities
+## testing if the drivers of income change when we only look at expensive metros
+df_high_cost <- subset(df, High_Cost == 1)
+reg2 <- lm(Median_Household_Income ~ Cost_Of_Living_RPP + Population + Education_Rate, data = df_high_cost)
+
+
+## use Real_Purchasing_Power as the dependent variable to see what actually makes people wealthier
+reg3 <- lm(Real_Purchasing_Power ~ Education_Rate + Population, data = df)
+
+
+
+## create a stargazer table to compare all three models
+stargazer(reg1, reg2, reg3, 
+          type = "text", 
+          title = "Regional Wealth Analysis: The Impact of Prices, Scale, and Skills",
+          column.labels = c("Full Nominal", "High Cost Only", "Real Wealth (Preferred)"), ## replace headers 
+          dep.var.labels = c("Nominal Income ($)", "Real Purchasing Power ($)"), ##changes names of (y)
+          covariate.labels = c("Cost of Living (RPP)", "Population", "Education Rate", "High Cost"))
+
+write.csv(df, "US_metro_purchasing_power.csv", row.names = FALSE) ##saves csv back into my folder
+
+##QUESTION 7
+##Model 3 is my preferred regression because it separates the relationship between regional price parities (RPP) and median household income. I selected this as the preferred model as it gives the most clear answer to my research question of whether higher living costs lead to higher nominal wages. The other models had population in them, but the impact was constantly close to zero. This shows that the size of a city is less important than the price level of a city when it comes to estimating household income. 
+##The coefficient for Cost_Of_Living_RPP is 1,511.70.  This means that for every 1 point increase in a city’s cost of living rpp, the median household income is expected to rise by approximately $1,511.70. This positive coefficient value confirms the theory that metropolitan areas with higher costs are more likely to have higher nominal salaries. The three stars (***) in the stargazer table show that this finding is very statistically important at the 1% level. This gives us a high level of confidence that the relationship between cost of living and income is not random. Also, the model's R-squared of 0.594 indicates that this variable explains almost 60% of the variation in household income across the 15 cities sampled. It implies that the cost of living is the major variable when determining regional wage levels in this data set. 
+
+
+```
